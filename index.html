@@ -1,0 +1,1542 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Analisis Markah SMK Kampar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+        
+        /* Custom Scrollbar for tables */
+        .table-container::-webkit-scrollbar {
+            height: 8px;
+            width: 8px;
+        }
+        .table-container::-webkit-scrollbar-track {
+            background: #f1f1f1; 
+            border-radius: 4px;
+        }
+        .table-container::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 4px;
+        }
+        .table-container::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(2px);
+        }
+
+        @media print {
+            @page {
+                size: A4;
+                margin: 1.5cm;
+            }
+            body {
+                background-color: white !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .print-only {
+                display: block !important;
+            }
+            .page-break {
+                page-break-after: always;
+            }
+            /* Reset container widths for printing */
+            #printArea {
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            .slip-container {
+                border: none !important;
+                box-shadow: none !important;
+                margin-bottom: 0 !important;
+            }
+            table {
+                width: 100% !important;
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body class="text-slate-800 h-screen flex flex-col overflow-hidden">
+
+    <nav class="bg-blue-800 text-white shadow-md no-print shrink-0">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center gap-3">
+                    <img src="https://iili.io/C2Vtyb4.md.jpg" alt="Lencana Sekolah" class="h-10 w-10 rounded-full object-cover bg-white p-1">
+                    <div class="flex flex-col">
+                        <span class="font-bold text-lg leading-tight tracking-tight hidden sm:block">SISTEM ANALISIS MARKAH</span>
+                        <span class="text-sm font-medium text-yellow-300 hidden sm:block">SEKOLAH MENENGAH KEBANGSAAN KAMPAR</span>
+                    </div>
+                    <span class="font-bold text-xl tracking-tight sm:hidden">SAM SMKM</span>
+                </div>
+                <div class="flex items-center space-x-1 sm:space-x-4">
+                    <button id="btnPrint" onclick="printReport('printArea')" class="hidden bg-emerald-600 hover:bg-emerald-500 px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2">
+                        <i class="fas fa-print"></i> Cetak Laporan
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="flex flex-1 overflow-hidden">
+        <!-- Sidebar Navigation -->
+        <aside class="w-20 md:w-64 bg-white border-r border-slate-200 shadow-sm flex flex-col no-print shrink-0 z-10 transition-all duration-300">
+            <div class="flex-1 py-4 flex flex-col gap-1 px-2">
+                <button onclick="switchTab('input')" id="tab-input" class="tab-btn flex items-center gap-3 w-full p-3 rounded-lg text-left text-slate-600 hover:bg-blue-50 hover:text-blue-700 transition-colors font-medium">
+                    <i class="fas fa-edit w-5 text-center"></i> <span class="hidden md:inline">Input Markah</span>
+                </button>
+                <button onclick="switchTab('analisis-ind')" id="tab-analisis-ind" class="tab-btn flex items-center gap-3 w-full p-3 rounded-lg text-left text-slate-600 hover:bg-blue-50 hover:text-blue-700 transition-colors font-medium">
+                    <i class="fas fa-user-chart w-5 text-center"></i> <span class="hidden md:inline">Analisis Individu</span>
+                </button>
+                <button onclick="switchTab('analisis-mp')" id="tab-analisis-mp" class="tab-btn flex items-center gap-3 w-full p-3 rounded-lg text-left text-slate-600 hover:bg-blue-50 hover:text-blue-700 transition-colors font-medium">
+                    <i class="fas fa-chart-bar w-5 text-center"></i> <span class="hidden md:inline">Prestasi MP</span>
+                </button>
+                <button onclick="switchTab('kedudukan')" id="tab-kedudukan" class="tab-btn flex items-center gap-3 w-full p-3 rounded-lg text-left text-slate-600 hover:bg-blue-50 hover:text-blue-700 transition-colors font-medium">
+                    <i class="fas fa-trophy w-5 text-center"></i> <span class="hidden md:inline">Kedudukan Murid</span>
+                </button>
+                <button onclick="switchTab('pelaporan')" id="tab-pelaporan" class="tab-btn flex items-center gap-3 w-full p-3 rounded-lg text-left text-slate-600 hover:bg-blue-50 hover:text-blue-700 transition-colors font-medium">
+                    <i class="fas fa-file-invoice w-5 text-center"></i> <span class="hidden md:inline">Pelaporan (Slip)</span>
+                </button>
+            </div>
+            <div class="p-4 border-t border-slate-100 text-xs text-center text-slate-400 hidden md:block">
+                SAM SMKM v1.0 &copy; 2026
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 overflow-y-auto bg-slate-50 relative" id="mainScrollArea">
+            
+            <div id="content-input" class="tab-content hidden p-4 sm:p-6 lg:p-8 no-print">
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 mb-6">
+                    <h2 class="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2"><i class="fas fa-edit text-blue-600"></i> Input Markah</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Kelas</label>
+                            <select id="input-kelas" class="w-full rounded-md border border-slate-300 p-2 focus:ring-2 focus:ring-blue-500 outline-none" onchange="loadInputTable()"></select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Pentaksiran</label>
+                            <select id="input-pentaksiran" class="w-full rounded-md border border-slate-300 p-2 focus:ring-2 focus:ring-blue-500 outline-none" onchange="loadInputTable()"></select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Subjek</label>
+                            <select id="input-subjek" class="w-full rounded-md border border-slate-300 p-2 focus:ring-2 focus:ring-blue-500 outline-none" onchange="loadInputTable()"></select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+                        <h3 class="font-semibold text-slate-800">Senarai Nama Murid</h3>
+                        <button onclick="simpanMarkah()" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm flex items-center gap-2">
+                            <i class="fas fa-save"></i> Simpan Markah
+                        </button>
+                    </div>
+                    <div class="overflow-x-auto table-container">
+                        <table class="w-full text-sm text-left">
+                            <thead class="text-xs text-slate-700 uppercase bg-slate-100 border-b border-slate-200">
+                                <tr>
+                                    <th class="px-4 py-3 w-16 text-center">Bil</th>
+                                    <th class="px-4 py-3">Nama Murid</th>
+                                    <th class="px-4 py-3 w-48">Tindakan Pantas</th>
+                                    <th class="px-4 py-3 w-32">Markah (0-100)</th>
+                                    <th class="px-4 py-3 w-20 text-center">Gred</th>
+                                    <th class="px-4 py-3">Tafsiran / Pencapaian</th>
+                                </tr>
+                            </thead>
+                            <tbody id="input-tbody" class="divide-y divide-slate-100">
+                                <!-- Data injected here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="content-analisis-ind" class="tab-content hidden p-4 sm:p-6 lg:p-8 no-print">
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 mb-6">
+                    <div class="flex justify-between items-center mb-4 flex-wrap gap-2">
+                        <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2"><i class="fas fa-user-chart text-purple-600"></i> Analisis Individu (Kelas)</h2>
+                        <button onclick="printReport('print-ai')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm flex items-center gap-2">
+                            <i class="fas fa-print"></i> Cetak Analisis
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Kelas</label>
+                            <select id="ai-kelas" class="w-full rounded-md border border-slate-300 p-2 focus:ring-2 focus:ring-purple-500 outline-none" onchange="loadAnalisisIndividu()"></select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Pentaksiran</label>
+                            <select id="ai-pentaksiran" class="w-full rounded-md border border-slate-300 p-2 focus:ring-2 focus:ring-purple-500 outline-none" onchange="loadAnalisisIndividu()"></select>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="print-ai" class="print-content">
+                <!-- Ranking Dalam Kelas -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden mb-8">
+                    <div class="p-4 border-b border-slate-200 bg-slate-50">
+                        <h3 class="font-semibold text-slate-800">Kedudukan Dalam Kelas (Ranking Purata)</h3>
+                    </div>
+                    <div class="overflow-x-auto table-container" style="max-height: 500px;">
+                        <table class="w-full text-sm text-left whitespace-nowrap">
+                            <thead id="ai-ranking-thead" class="text-xs text-slate-700 uppercase bg-slate-100 border-b border-slate-200 sticky top-0 z-10">
+                                <!-- Dynamic headers based on subjects -->
+                            </thead>
+                            <tbody id="ai-ranking-tbody" class="divide-y divide-slate-100">
+                                <!-- Data injected here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Murid Terbaik Subjek -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="p-4 border-b border-slate-200 bg-slate-50">
+                        <h3 class="font-semibold text-slate-800">Murid Terbaik Mengikut Subjek</h3>
+                    </div>
+                    <div class="overflow-x-auto table-container">
+                        <table class="w-full text-sm text-left">
+                            <thead class="text-xs text-slate-700 uppercase bg-slate-100 border-b border-slate-200">
+                                <tr>
+                                    <th class="px-4 py-3 w-16 text-center">Bil</th>
+                                    <th class="px-4 py-3">Subjek</th>
+                                    <th class="px-4 py-3">Nama Murid</th>
+                                    <th class="px-4 py-3 w-24 text-center">Markah</th>
+                                    <th class="px-4 py-3 w-20 text-center">Gred</th>
+                                    <th class="px-4 py-3">Pencapaian</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ai-terbaik-tbody" class="divide-y divide-slate-100">
+                                <!-- Data injected here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                </div>
+            </div>
+
+            <div id="content-analisis-mp" class="tab-content hidden p-4 sm:p-6 lg:p-8 no-print">
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 mb-6">
+                    <div class="flex justify-between items-center mb-4 flex-wrap gap-2">
+                        <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2"><i class="fas fa-chart-bar text-emerald-600"></i> Analisis Prestasi Mata Pelajaran (Aliran)</h2>
+                        <button onclick="printReport('print-amp')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm flex items-center gap-2">
+                            <i class="fas fa-print"></i> Cetak Analisis
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Aliran (Tingkatan)</label>
+                            <select id="amp-aliran" class="w-full rounded-md border border-slate-300 p-2 focus:ring-2 focus:ring-emerald-500 outline-none" onchange="loadAnalisisMP()">
+                                <option value="1">Tingkatan 1</option>
+                                <option value="2">Tingkatan 2</option>
+                                <option value="3">Tingkatan 3</option>
+                                <option value="4">Tingkatan 4</option>
+                                <option value="5">Tingkatan 5</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Pentaksiran</label>
+                            <select id="amp-pentaksiran" class="w-full rounded-md border border-slate-300 p-2 focus:ring-2 focus:ring-emerald-500 outline-none" onchange="loadAnalisisMP()"></select>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="print-amp" class="print-content">
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="p-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center no-print">
+                        <h3 class="font-semibold text-slate-800">Jadual Analisis Mengikut Mata Pelajaran</h3>
+                        <span class="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded border border-yellow-200">Menatal ke kanan untuk melihat semua lajur</span>
+                    </div>
+                    <div class="overflow-x-auto table-container" style="max-height: 600px;">
+                        <table class="w-full text-xs text-left whitespace-nowrap border-collapse">
+                            <thead id="amp-thead" class="text-slate-700 uppercase bg-slate-100 sticky top-0 z-10 shadow-sm border-b-2 border-slate-300">
+                                <!-- Complex Multi-level Headers injected here -->
+                            </thead>
+                            <tbody id="amp-tbody" class="divide-y divide-slate-200">
+                                <!-- Data injected here -->
+                            </tbody>
+                            <tfoot id="amp-tfoot" class="bg-slate-50 font-bold border-t-2 border-slate-300">
+                                <!-- Summary injected here -->
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+                </div>
+            </div>
+
+            <div id="content-kedudukan" class="tab-content hidden p-4 sm:p-6 lg:p-8 no-print">
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 mb-6">
+                    <div class="flex justify-between items-center mb-4 flex-wrap gap-2">
+                        <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2"><i class="fas fa-trophy text-amber-500"></i> Kedudukan Murid (Keseluruhan Aliran)</h2>
+                        <button onclick="printReport('print-km')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm flex items-center gap-2">
+                            <i class="fas fa-print"></i> Cetak Kedudukan
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Aliran (Tingkatan)</label>
+                            <select id="km-aliran" class="w-full rounded-md border border-slate-300 p-2 focus:ring-2 focus:ring-amber-500 outline-none" onchange="loadKedudukan()"></select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Pentaksiran</label>
+                            <select id="km-pentaksiran" class="w-full rounded-md border border-slate-300 p-2 focus:ring-2 focus:ring-amber-500 outline-none" onchange="loadKedudukan()"></select>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="print-km" class="print-content">
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="overflow-x-auto table-container">
+                        <table class="w-full text-sm text-left">
+                            <thead class="text-xs text-slate-700 uppercase bg-slate-100 border-b border-slate-200">
+                                <tr>
+                                    <th class="px-4 py-3 text-center w-24">Kedudukan</th>
+                                    <th class="px-4 py-3">Nama Murid</th>
+                                    <th class="px-4 py-3 w-32">Kelas</th>
+                                    <th class="px-4 py-3 w-32 text-center">Jumlah Markah</th>
+                                    <th class="px-4 py-3 w-32 text-center">Purata</th>
+                                    <th class="px-4 py-3 w-32 text-center">Gred Purata</th>
+                                    <th class="px-4 py-3 w-32 text-center">Keputusan</th>
+                                </tr>
+                            </thead>
+                            <tbody id="km-tbody" class="divide-y divide-slate-100">
+                                <!-- Data injected here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                </div>
+            </div>
+
+            <div id="content-pelaporan" class="tab-content hidden p-4 sm:p-6 lg:p-8 no-print">
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 mb-6">
+                    <h2 class="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2"><i class="fas fa-file-invoice text-indigo-600"></i> Pelaporan Individu</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Kelas</label>
+                            <select id="slip-kelas" class="w-full rounded-md border border-slate-300 p-2 focus:ring-2 focus:ring-indigo-500 outline-none" onchange="generateSlips()"></select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Pentaksiran</label>
+                            <select id="slip-pentaksiran" class="w-full rounded-md border border-slate-300 p-2 focus:ring-2 focus:ring-indigo-500 outline-none" onchange="generateSlips()"></select>
+                        </div>
+                    </div>
+                    <div class="mt-4 flex justify-end">
+                        <button onclick="printReport('printArea')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm flex items-center gap-2">
+                            <i class="fas fa-print"></i> Cetak Semua Slip Kelas Ini
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- This area is hidden on screen but visible during printing. 
+                 Tab 5 will inject the visual preview here as well, so it serves dual purpose. -->
+            <div id="printArea" class="w-full hidden pb-20 print-content">
+                <!-- Slips injected here -->
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Custom Modal (Replaces alert) -->
+    <div id="customModal" class="fixed inset-0 modal-overlay z-50 flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-200">
+        <div class="bg-white rounded-xl shadow-xl max-w-sm w-full mx-4 transform scale-95 transition-transform duration-200" id="modalContent">
+            <div class="p-6 text-center">
+                <div id="modalIcon" class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4 text-green-600 text-2xl">
+                    <i class="fas fa-check"></i>
+                </div>
+                <h3 id="modalTitle" class="text-lg leading-6 font-medium text-gray-900 mb-2">Berjaya!</h3>
+                <p id="modalMessage" class="text-sm text-gray-500 mb-6">Tindakan anda telah berjaya disimpan.</p>
+                <button id="modalCloseBtn" onclick="closeModal()" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none sm:text-sm transition-colors">
+                    Tutup
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- DATA STATE ---
+        const SHEET_ID = '1qd_mKBeaLnwjJRdwczk6NB5pXvnXRY95FkEez7kk5aI';
+        const SCHOOL_NAME = 'SEKOLAH MENENGAH KEBANGSAAN KAMPAR';
+        const SCHOOL_LOGO_URL = 'https://iili.io/C2Vtyb4.md.jpg';
+
+        const MOCK_DB = {
+            classes: [],
+            assessments: [],
+            subjects: [],
+            students: [],
+            marks: []
+        };
+
+        // --- HELPER: Initializer & Ambil Data Langsung dari Google Sheet ---
+        async function initApp() {
+            // Paparkan visual loading ketika mengambil data sheet
+            showModal('Memuat turun data...', 'Sedang mengambil tetapan dan rekod markah terkini dari pelbagai pangkalan data Google Sheets. Sila tunggu sebentar.', 'loading');
+            await fetchGoogleSheetData();
+            populateDropdowns();
+            closeModal();
+            switchTab('input'); // Buka tab input sebagai lalai selepas data siap
+        }
+
+        async function fetchGoogleSheetData() {
+            // URL sumber data Google Sheet
+            const urlSenaraiMurid = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTIHvoidJnTgwp5dnnldADCqBbGrf4PI1h73RIeS41_2_4HARsq9iwXtF3f5mwwPsbSUDaDILWDiyoU/pub?gid=0&single=true&output=csv';
+            const urlSenaraiSubjek = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTIHvoidJnTgwp5dnnldADCqBbGrf4PI1h73RIeS41_2_4HARsq9iwXtF3f5mwwPsbSUDaDILWDiyoU/pub?gid=527445164&single=true&output=csv';
+            const urlRekodMarkah = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTIHvoidJnTgwp5dnnldADCqBbGrf4PI1h73RIeS41_2_4HARsq9iwXtF3f5mwwPsbSUDaDILWDiyoU/pub?gid=137716384&single=true&output=csv';
+
+            try {
+                // Ambil data asas secara berasingan supaya sistem tidak kosong hanya kerana salah satu CSV gagal.
+                const csvMurid = await fetchCSVText(urlSenaraiMurid, 'CSV Nama Murid', true);
+                const csvSubjek = await fetchCSVText(urlSenaraiSubjek, 'CSV Pentaksiran dan Subjek', true);
+                let csvMarkah = '';
+
+                try {
+                    csvMarkah = await fetchCSVText(urlRekodMarkah, 'CSV Rekod Markah', false);
+                } catch (markahErr) {
+                    console.warn('CSV Rekod Markah tidak dapat dimuat. Sistem input masih boleh digunakan.', markahErr);
+                    csvMarkah = '';
+                }
+
+                // --- 1. PROSES JADUAL MURID & KELAS ---
+                const dataMurid = parseCSV(csvMurid);
+                MOCK_DB.students = [];
+                let classSet = new Set();
+
+                dataMurid.forEach((row, index) => {
+                    const keyKelas = findHeader(row, ['KELAS', 'CLASS']);
+                    const keyNama = findHeader(row, ['NAMA MURID', 'NAMA', 'NAMA PELAJAR', 'MURID', 'NAMA PENUH']);
+
+                    if(keyKelas && keyNama) {
+                        const kelas = String(row[keyKelas] || '').trim();
+                        const nama = String(row[keyNama] || '').trim();
+
+                        if(nama !== '' && kelas !== '') {
+                            classSet.add(kelas);
+                            MOCK_DB.students.push({
+                                id: index + 1,
+                                name: nama,
+                                class: kelas,
+                                form: parseInt(kelas.charAt(0)) || 1
+                            });
+                        }
+                    }
+                });
+                MOCK_DB.classes = Array.from(classSet).sort(naturalSort);
+
+                // --- 2. PROSES JADUAL PENTAKSIRAN & SUBJEK ---
+                const dataSubjek = parseCSV(csvSubjek);
+                let pentaksiranSet = new Set();
+                let subjekSet = new Set();
+
+                dataSubjek.forEach(row => {
+                    const keyPen = findHeader(row, ['PENTAKSIRAN', 'UJIAN', 'PEPERIKSAAN', 'NAMA PENTAKSIRAN']);
+                    const keySub = findHeader(row, ['SUBJEK', 'MATA PELAJARAN', 'MATAPELAJARAN', 'MP']);
+
+                    if(keyPen && String(row[keyPen] || '').trim() !== '') pentaksiranSet.add(String(row[keyPen]).trim());
+                    if(keySub && String(row[keySub] || '').trim() !== '') subjekSet.add(String(row[keySub]).trim());
+                });
+                MOCK_DB.assessments = Array.from(pentaksiranSet);
+                MOCK_DB.subjects = Array.from(subjekSet).sort(naturalSort);
+
+                // --- 3. PROSES REKOD MARKAH MURID ---
+                MOCK_DB.marks = [];
+                if (csvMarkah && csvMarkah.trim() !== '') {
+                    const dataMarkah = parseCSV(csvMarkah);
+
+                    dataMarkah.forEach(row => {
+                        const keyNama = findHeader(row, ['NAMA MURID', 'NAMA', 'NAMA PELAJAR']);
+                        const keyKelas = findHeader(row, ['KELAS', 'CLASS']);
+                        const keyPentaksiran = findHeader(row, ['PENTAKSIRAN', 'UJIAN', 'PEPERIKSAAN']);
+                        const keySubjek = findHeader(row, ['SUBJEK', 'MATA PELAJARAN', 'MATAPELAJARAN', 'MP']);
+                        const keyMarkah = findHeader(row, ['MARKAH', 'SKOR', 'MARK']);
+
+                        const nama = keyNama ? String(row[keyNama] || '').trim() : '';
+                        const kelas = keyKelas ? String(row[keyKelas] || '').trim() : '';
+                        const pentaksiran = keyPentaksiran ? String(row[keyPentaksiran] || '').trim() : '';
+                        const subjek = keySubjek ? String(row[keySubjek] || '').trim() : '';
+                        const markah = keyMarkah ? String(row[keyMarkah] || '').trim().toUpperCase() : '';
+
+                        if(nama !== '' && subjek !== '' && markah !== '') {
+                            const student = MOCK_DB.students.find(s => normalizeText(s.name) === normalizeText(nama) && normalizeText(s.class) === normalizeText(kelas)) 
+                                         || MOCK_DB.students.find(s => normalizeText(s.name) === normalizeText(nama));
+
+                            if(student) {
+                                MOCK_DB.marks.push({
+                                    studentId: student.id,
+                                    assessment: pentaksiran,
+                                    subject: subjek,
+                                    mark: markah
+                                });
+                            }
+                        }
+                    });
+                }
+
+                if (MOCK_DB.classes.length === 0 || MOCK_DB.students.length === 0) {
+                    showModal('Data Murid Tidak Dijumpai', 'CSV nama murid berjaya dibaca tetapi header/kolum tidak sepadan. Pastikan ada kolum KELAS dan NAMA MURID.', 'error');
+                    return;
+                }
+
+                if (MOCK_DB.assessments.length === 0 || MOCK_DB.subjects.length === 0) {
+                    showModal('Data Pentaksiran/Subjek Tidak Dijumpai', 'Pastikan CSV pentaksiran dan subjek mempunyai kolum PENTAKSIRAN dan SUBJEK.', 'error');
+                    return;
+                }
+
+            } catch (error) {
+                console.error('Ralat CSV:', error);
+                showModal('Ralat Pangkalan Data', error.message || 'Gagal memuat turun data dari pautan Google Sheet. Sila semak URL CSV dan tetapan Publish to web.', 'error');
+            }
+        }
+
+        async function fetchCSVText(url, label, wajib) {
+            const cacheBuster = url.includes('?') ? '&t=' + Date.now() : '?t=' + Date.now();
+            const response = await fetch(url + cacheBuster, { cache: 'no-store' });
+
+            if (!response.ok) {
+                const msg = `${label} gagal dimuat. Status: ${response.status}`;
+                if (wajib) throw new Error(msg);
+                console.warn(msg);
+                return '';
+            }
+
+            const text = await response.text();
+            const cleanText = text.trim();
+
+            if (!cleanText) {
+                const msg = `${label} kosong. Semak tab Google Sheet dan Publish to web.`;
+                if (wajib) throw new Error(msg);
+                console.warn(msg);
+                return '';
+            }
+
+            // Jika Google pulangkan halaman HTML, biasanya CSV belum dipublish/public.
+            if (cleanText.toLowerCase().startsWith('<!doctype') || cleanText.toLowerCase().startsWith('<html')) {
+                const msg = `${label} tidak dipaparkan sebagai CSV. Pastikan Google Sheet telah dipublish sebagai CSV dan aksesnya public.`;
+                if (wajib) throw new Error(msg);
+                console.warn(msg);
+                return '';
+            }
+
+            return text;
+        }
+
+        function findHeader(row, possibleNames) {
+            const keys = Object.keys(row || {});
+            return keys.find(k => possibleNames.some(name => normalizeText(k) === normalizeText(name)));
+        }
+
+        function normalizeText(value) {
+            return String(value || '').trim().toUpperCase().replace(/\s+/g, ' ');
+        }
+
+        function naturalSort(a, b) {
+            return String(a).localeCompare(String(b), 'ms', { numeric: true, sensitivity: 'base' });
+        }
+
+        // Fungsi manual untuk memproses teks mentah CSV kepada tatasusunan objek JavaScript
+        function parseCSV(str) {
+            const arr = [];
+            let quote = false;  
+            let col = 0, row = 0;
+            for (let c = 0; c < str.length; c++) {
+                let cc = str[c], nc = str[c+1];
+                arr[row] = arr[row] || [];
+                arr[row][col] = arr[row][col] || '';
+                
+                if (cc === '"' && quote && nc === '"') { arr[row][col] += cc; ++c; continue; }
+                if (cc === '"') { quote = !quote; continue; }
+                if (cc === ',' && !quote) { ++col; continue; }
+                if (cc === '\r' && nc === '\n' && !quote) { ++row; col = 0; ++c; continue; }
+                if (cc === '\n' && !quote) { ++row; col = 0; continue; }
+                if (cc === '\r' && !quote) { ++row; col = 0; continue; }
+                
+                arr[row][col] += cc;
+            }
+            
+            if (!arr.length || !arr[0]) return [];
+            const headers = arr[0].map(h => String(h || '').trim());
+            const result = [];
+            for (let i = 1; i < arr.length; i++) {
+                if (arr[i].length === 1 && arr[i][0] === '') continue; // langkau baris kosong
+                const obj = {};
+                for (let j = 0; j < headers.length; j++) {
+                    obj[headers[j]] = arr[i][j] ? arr[i][j].trim() : '';
+                }
+                result.push(obj);
+            }
+            return result;
+        }
+
+        function getFormByClassName(className) {
+            return parseInt(className.charAt(0));
+        }
+
+        // Logic berdasarkan arahan prompt
+        function evaluateMark(mark, form) {
+            if (mark === 'TH') return { gred: 'TH', tafsiran: 'TIDAK HADIR', mata: 0 };
+            if (mark === 'TD' || mark === null || mark === '') return { gred: 'TD', tafsiran: 'TIDAK DITAKSIR', mata: 0 };
+
+            let numMark = parseFloat(mark);
+            if (isNaN(numMark) || numMark < 0 || numMark > 100) return { gred: 'TD', tafsiran: 'RALAT', mata: 0 };
+
+            if (form >= 4) {
+                // Tingkatan 4, 5
+                if(numMark >= 90) return { gred: 'A+', tafsiran: 'Cemerlang Tertinggi', mata: 0 };
+                if(numMark >= 80) return { gred: 'A', tafsiran: 'Cemerlang Tinggi', mata: 1 };
+                if(numMark >= 70) return { gred: 'A-', tafsiran: 'Cemerlang', mata: 2 };
+                if(numMark >= 65) return { gred: 'B+', tafsiran: 'Kepujian Tertinggi', mata: 3 };
+                if(numMark >= 60) return { gred: 'B', tafsiran: 'Kepujian Tinggi', mata: 4 };
+                if(numMark >= 55) return { gred: 'C+', tafsiran: 'Kepujian Atas', mata: 5 };
+                if(numMark >= 50) return { gred: 'C', tafsiran: 'Kepujian', mata: 6 };
+                if(numMark >= 45) return { gred: 'D', tafsiran: 'Lulus Atas', mata: 7 };
+                if(numMark >= 40) return { gred: 'E', tafsiran: 'Lulus', mata: 8 };
+                return { gred: 'G', tafsiran: 'Gagal', mata: 9 };
+            } else {
+                // Tingkatan 1, 2, 3
+                // Memandangkan formula GPMP meminta nilai A+=0 hingga G=9, 
+                // KPM standard utk menengah rendah ialah A=1 hingga F=6.
+                // Kita padankan mata gred untuk selaras dengan keperluan pengiraan GPMP yg realistik.
+                if(numMark >= 82) return { gred: 'A', tafsiran: 'Cemerlang', mata: 1 };
+                if(numMark >= 66) return { gred: 'B', tafsiran: 'Kepujian', mata: 2 };
+                if(numMark >= 50) return { gred: 'C', tafsiran: 'Baik', mata: 3 };
+                if(numMark >= 35) return { gred: 'D', tafsiran: 'Memuaskan', mata: 4 };
+                if(numMark >= 20) return { gred: 'E', tafsiran: 'Mencapai Tahap Minimum', mata: 5 };
+                return { gred: 'F', tafsiran: 'Belum Mencapai Tahap Minimum', mata: 6 };
+            }
+        }
+
+        function isLulus(gred, form) {
+            if(gred === 'TH' || gred === 'TD' || !gred) return false;
+            if(form >= 4) return gred !== 'G';
+            return gred !== 'F';
+        }
+
+        // --- UI & TAB MANAGEMENT ---
+        function switchTab(tabId) {
+            // Hide all contents
+            document.querySelectorAll('.tab-content').forEach(el => {
+                el.classList.add('hidden');
+            });
+            document.getElementById('printArea').classList.add('hidden');
+            
+            // Remove active state from all buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('bg-blue-100', 'text-blue-800', 'border-l-4', 'border-blue-600');
+                btn.classList.add('text-slate-600');
+            });
+
+            // Show selected tab content
+            const content = document.getElementById('content-' + tabId);
+            if(content) content.classList.remove('hidden');
+
+            // Add active state to selected button
+            const btn = document.getElementById('tab-' + tabId);
+            if(btn) {
+                btn.classList.remove('text-slate-600');
+                btn.classList.add('bg-blue-100', 'text-blue-800', 'border-l-4', 'border-blue-600');
+            }
+
+            // Hide/Show print button in Navbar depending on tab
+            const btnPrint = document.getElementById('btnPrint');
+            if(tabId === 'pelaporan') {
+                btnPrint.classList.remove('hidden');
+                document.getElementById('printArea').classList.remove('hidden');
+                document.getElementById('content-pelaporan').classList.add('hidden'); // Hide control panel when showing print area visual
+                document.getElementById('content-pelaporan').classList.remove('hidden'); 
+            } else {
+                btnPrint.classList.add('hidden');
+            }
+
+            // Trigger specific load functions
+            if(tabId === 'input') loadInputTable();
+            if(tabId === 'analisis-ind') loadAnalisisIndividu();
+            if(tabId === 'analisis-mp') loadAnalisisMP();
+            if(tabId === 'kedudukan') loadKedudukan();
+            if(tabId === 'pelaporan') generateSlips();
+        }
+
+        function populateDropdowns() {
+            const classSelects = ['input-kelas', 'ai-kelas', 'slip-kelas'];
+            const pentaksiranSelects = ['input-pentaksiran', 'ai-pentaksiran', 'amp-pentaksiran', 'km-pentaksiran', 'slip-pentaksiran'];
+
+            classSelects.forEach(id => {
+                const el = document.getElementById(id);
+                if(el) {
+                    el.innerHTML = '';
+                    MOCK_DB.classes.forEach(c => el.add(new Option(c, c)));
+                }
+            });
+
+            pentaksiranSelects.forEach(id => {
+                const el = document.getElementById(id);
+                if(el) {
+                    el.innerHTML = '';
+                    MOCK_DB.assessments.forEach(a => el.add(new Option(a, a)));
+                    if(MOCK_DB.assessments.length > 0) el.selectedIndex = 0; 
+                }
+            });
+
+            const subjekEl = document.getElementById('input-subjek');
+            if (subjekEl) {
+                subjekEl.innerHTML = '';
+                MOCK_DB.subjects.forEach(s => subjekEl.add(new Option(s, s)));
+            }
+
+            // Pilihan Aliran
+            document.getElementById('km-aliran').innerHTML = '';
+            [1,2,3,4,5].forEach(f => document.getElementById('km-aliran').add(new Option(`Tingkatan ${f}`, f)));
+        }
+
+        function loadInputTable() {
+            const selKelas = document.getElementById('input-kelas').value;
+            const selPen = document.getElementById('input-pentaksiran').value;
+            const selSub = document.getElementById('input-subjek').value;
+            const tbody = document.getElementById('input-tbody');
+            const form = getFormByClassName(selKelas);
+
+            // Filter students by class
+            const students = MOCK_DB.students.filter(s => s.class === selKelas);
+            
+            let html = '';
+            students.forEach((stu, index) => {
+                // Find existing mark
+                const existingRec = MOCK_DB.marks.find(m => m.studentId === stu.id && m.assessment === selPen && m.subject === selSub);
+                const markVal = existingRec ? existingRec.mark : '';
+                const evalData = evaluateMark(markVal, form);
+
+                html += `
+                    <tr class="hover:bg-slate-50 transition-colors" data-studentid="${stu.id}">
+                        <td class="px-4 py-3 text-center border-r border-slate-100">${index + 1}</td>
+                        <td class="px-4 py-3 font-medium text-slate-800">${stu.name}</td>
+                        <td class="px-4 py-3">
+                            <div class="flex gap-2">
+                                <button onclick="setQuickMark(${stu.id}, 'TH')" class="px-3 py-1 bg-red-100 text-red-700 hover:bg-red-200 rounded text-xs font-semibold">TH</button>
+                                <button onclick="setQuickMark(${stu.id}, 'TD')" class="px-3 py-1 bg-slate-200 text-slate-700 hover:bg-slate-300 rounded text-xs font-semibold">TD</button>
+                            </div>
+                        </td>
+                        <td class="px-4 py-3">
+                            <input type="text" id="mark-${stu.id}" value="${markVal}" 
+                                class="w-full border border-slate-300 rounded px-3 py-1 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-center uppercase"
+                                oninput="liveUpdateGrade(${stu.id}, ${form})">
+                        </td>
+                        <td class="px-4 py-3 text-center font-bold" id="gred-${stu.id}">${evalData.gred}</td>
+                        <td class="px-4 py-3 text-slate-500 text-sm" id="tafsir-${stu.id}">${evalData.tafsiran}</td>
+                    </tr>
+                `;
+            });
+
+            if(students.length === 0) {
+                html = `<tr><td colspan="6" class="px-4 py-8 text-center text-slate-500">Tiada murid dalam kelas ini.</td></tr>`;
+            }
+
+            tbody.innerHTML = html;
+        }
+
+        function setQuickMark(studentId, type) {
+            const input = document.getElementById(`mark-${studentId}`);
+            input.value = type;
+            const form = getFormByClassName(document.getElementById('input-kelas').value);
+            liveUpdateGrade(studentId, form);
+        }
+
+        function liveUpdateGrade(studentId, form) {
+            const input = document.getElementById(`mark-${studentId}`);
+            let val = input.value.trim().toUpperCase();
+            
+            // Allow numbers, 'TH', 'TD'
+            if(val !== 'TH' && val !== 'TD' && val !== '') {
+                // If user types letters other than TH/TD, filter it out
+                if(isNaN(val)) val = val.replace(/[^0-9]/g, '');
+                if(val !== '') {
+                    let num = parseInt(val);
+                    if(num > 100) val = '100'; // Cap at 100
+                }
+            }
+            input.value = val;
+
+            const evalData = evaluateMark(val, form);
+            document.getElementById(`gred-${studentId}`).innerText = evalData.gred;
+            document.getElementById(`tafsir-${studentId}`).innerText = evalData.tafsiran;
+        }
+
+        async function simpanMarkah() {
+            const selKelas = document.getElementById('input-kelas').value;
+            const selPen = document.getElementById('input-pentaksiran').value;
+            const selSub = document.getElementById('input-subjek').value;
+            const form = getFormByClassName(selKelas);
+            const tbody = document.getElementById('input-tbody');
+            const rows = tbody.querySelectorAll('tr[data-studentid]');
+
+            let savedCount = 0;
+            let dataToSave = [];
+
+            rows.forEach(row => {
+                const stuId = parseInt(row.getAttribute('data-studentid'));
+                const studentName = row.querySelector('td:nth-child(2)').innerText;
+                const markInput = document.getElementById(`mark-${stuId}`).value.trim().toUpperCase();
+                const gred = document.getElementById(`gred-${stuId}`).innerText;
+                const tafsiran = document.getElementById(`tafsir-${stuId}`).innerText;
+                
+                // Remove existing from local MOCK_DB so it updates instantly
+                MOCK_DB.marks = MOCK_DB.marks.filter(m => !(m.studentId === stuId && m.assessment === selPen && m.subject === selSub));
+                
+                let finalMark = 'TD';
+                if(markInput !== '') {
+                    finalMark = markInput === 'TH' ? 'TH' : (markInput === 'TD' ? 'TD' : parseInt(markInput));
+                    savedCount++;
+                }
+                
+                MOCK_DB.marks.push({
+                    studentId: stuId,
+                    assessment: selPen,
+                    subject: selSub,
+                    mark: finalMark
+                });
+
+                // Kumpul data untuk dihantar secara pukal ke Google Sheets
+                dataToSave.push({
+                    studentId: stuId,
+                    name: studentName,
+                    kelas: selKelas,
+                    form: form,
+                    pentaksiran: selPen,
+                    subjek: selSub,
+                    mark: finalMark,
+                    gred: gred,
+                    tafsiran: tafsiran
+                });
+            });
+
+            // 1. Paparkan status loading
+            showModal('Sedang Menyimpan...', 'Sila tunggu sebentar, data sedang dihantar ke Google Sheets.', 'loading');
+
+            const scriptURL = 'https://script.google.com/macros/s/AKfycbxAqjRO6YX6bDI0_c_-gLzSS6wf-1pN4gIOvbyIRVe-3Kxg5UXV69dysjo8sMTxT0XpoA/exec';
+            
+            try {
+                // 2. Guna URLSearchParams
+                const params = new URLSearchParams();
+                params.append('action', 'saveMarks');
+                params.append('payload', JSON.stringify(dataToSave)); // Hantar data sebagai rentetan JSON
+
+                // 3. Proses 'Fetch' ke Apps Script
+                const response = await fetch(scriptURL, {
+                    method: 'POST',
+                    body: params,
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    }
+                });
+
+                const result = await response.json();
+
+                // 4. Semak status respons
+                if(result.status === 'success') {
+                    showModal('Berjaya Disimpan!', `${savedCount} rekod markah untuk subjek ${selSub} kelas ${selKelas} telah berjaya direkod ke pangkalan data Google Sheets.`, 'success');
+                } else {
+                    showModal('Ralat Penyimpanan', `Gagal menyimpan: ${result.message}`, 'error');
+                }
+            } catch (error) {
+                console.error('Fetch Error:', error);
+                showModal('Ralat Rangkaian', 'Gagal berhubung dengan Google Sheets. Markah disimpan secara lokal buat masa ini. Sila semak capaian internet.', 'error');
+            }
+        }
+
+        function loadAnalisisIndividu() {
+            const selKelas = document.getElementById('ai-kelas').value;
+            const selPen = document.getElementById('ai-pentaksiran').value;
+            const form = getFormByClassName(selKelas);
+            const students = MOCK_DB.students.filter(s => s.class === selKelas);
+
+            if(students.length === 0) {
+                document.getElementById('ai-ranking-thead').innerHTML = '';
+                document.getElementById('ai-ranking-tbody').innerHTML = '<tr><td class="p-4 text-center">Tiada data</td></tr>';
+                document.getElementById('ai-terbaik-tbody').innerHTML = '<tr><td class="p-4 text-center" colspan="6">Tiada data</td></tr>';
+                return;
+            }
+
+            // Identify all subjects taken by this class in this assessment
+            let classSubjects = new Set();
+            let studentDataMap = new Map(); // id -> { name, subjects: {}, totalMark, subjCount, form }
+
+            students.forEach(stu => {
+                studentDataMap.set(stu.id, { 
+                    id: stu.id, name: stu.name, subjects: {}, totalMark: 0, 
+                    subjCount: 0, form: form, totalGp: 0, gpSubjCount: 0 
+                });
+            });
+
+            const relevantMarks = MOCK_DB.marks.filter(m => m.assessment === selPen && studentDataMap.has(m.studentId));
+            
+            relevantMarks.forEach(m => {
+                if(m.mark !== 'TD' && m.mark !== 'TH' && m.mark !== '') {
+                    classSubjects.add(m.subject);
+                    let sData = studentDataMap.get(m.studentId);
+                    let evalD = evaluateMark(m.mark, form);
+                    sData.subjects[m.subject] = { mark: m.mark, gred: evalD.gred };
+                    
+                    sData.totalMark += parseFloat(m.mark);
+                    sData.subjCount++;
+                    sData.totalGp += evalD.mata;
+                    sData.gpSubjCount++;
+                } else if (m.mark === 'TH') {
+                    classSubjects.add(m.subject);
+                    let sData = studentDataMap.get(m.studentId);
+                    sData.subjects[m.subject] = { mark: 'TH', gred: 'TH' };
+                    // TH counts as taken but 0 mark, 0 GP usually? Or excluded from Purata? 
+                    // Let's include in divisor to penalize TH.
+                    sData.subjCount++;
+                    sData.gpSubjCount++; 
+                }
+            });
+
+            const subjectsArr = Array.from(classSubjects).sort();
+
+            // Calculate Purata and Ranking
+            let studentList = Array.from(studentDataMap.values());
+            studentList.forEach(s => {
+                s.purata = s.subjCount > 0 ? (s.totalMark / s.subjCount).toFixed(2) : 0;
+                s.gpa = s.gpSubjCount > 0 ? (s.totalGp / s.gpSubjCount).toFixed(2) : '0.00';
+                s.gredPurata = s.subjCount > 0 ? evaluateMark(s.purata, form).gred : '-';
+            });
+
+            // Sort by Purata Descending
+            studentList.sort((a, b) => b.purata - a.purata);
+
+            // 1. Build Ranking Table
+            let theadHtml = `<tr>
+                <th rowspan="2" class="px-3 py-2 border border-slate-200 text-center bg-slate-100 align-middle">KED</th>
+                <th rowspan="2" class="px-4 py-2 border border-slate-200 bg-slate-100 align-middle min-w-[200px]">NAMA MURID</th>`;
+            
+            subjectsArr.forEach(sub => {
+                theadHtml += `<th colspan="2" class="px-2 py-1 border border-slate-200 text-center bg-blue-50 truncate max-w-[150px]" title="${sub}">${sub.substring(0, 10)}.</th>`;
+            });
+            
+            theadHtml += `
+                <th rowspan="2" class="px-2 py-2 border border-slate-200 text-center bg-slate-100 align-middle">JUM</th>
+                <th rowspan="2" class="px-2 py-2 border border-slate-200 text-center bg-slate-100 align-middle">PURATA</th>
+                <th rowspan="2" class="px-2 py-2 border border-slate-200 text-center bg-slate-100 align-middle">GRED PURATA</th>
+            </tr><tr>`;
+
+            subjectsArr.forEach(() => {
+                theadHtml += `<th class="px-1 py-1 border border-slate-200 text-center text-[10px] bg-white">M</th><th class="px-1 py-1 border border-slate-200 text-center text-[10px] bg-white">G</th>`;
+            });
+            theadHtml += `</tr>`;
+            document.getElementById('ai-ranking-thead').innerHTML = borderFixHtml(theadHtml);
+
+            let tbodyHtml = '';
+            studentList.forEach((s, idx) => {
+                tbodyHtml += `<tr class="hover:bg-blue-50">
+                    <td class="px-3 py-2 border border-slate-200 text-center font-bold">${idx + 1}</td>
+                    <td class="px-4 py-2 border border-slate-200 text-xs font-medium truncate max-w-[200px]" title="${s.name}">${s.name}</td>`;
+                
+                subjectsArr.forEach(sub => {
+                    let mData = s.subjects[sub];
+                    let m = mData ? mData.mark : '-';
+                    let g = mData ? mData.gred : '-';
+                    // color code grades
+                    let gColor = (g==='G' || g==='F' || g==='TH') ? 'text-red-600 font-bold' : '';
+                    tbodyHtml += `
+                        <td class="px-1 py-2 border border-slate-200 text-center text-xs">${m}</td>
+                        <td class="px-1 py-2 border border-slate-200 text-center text-xs ${gColor}">${g}</td>`;
+                });
+
+                tbodyHtml += `
+                    <td class="px-2 py-2 border border-slate-200 text-center font-semibold text-blue-700">${s.totalMark}</td>
+                    <td class="px-2 py-2 border border-slate-200 text-center font-bold">${s.purata}</td>
+                    <td class="px-2 py-2 border border-slate-200 text-center font-semibold text-emerald-600">${s.gredPurata}</td>
+                </tr>`;
+            });
+            document.getElementById('ai-ranking-tbody').innerHTML = tbodyHtml;
+
+            // 2. Build Murid Terbaik Subjek
+            let terbaikHtml = '';
+            let bIl = 1;
+            subjectsArr.forEach(sub => {
+                let bestStudent = null;
+                let highestMark = -1;
+
+                studentList.forEach(s => {
+                    let mData = s.subjects[sub];
+                    if(mData && mData.mark !== 'TH' && mData.mark !== 'TD') {
+                        let mVal = parseFloat(mData.mark);
+                        if(mVal > highestMark) {
+                            highestMark = mVal;
+                            bestStudent = s;
+                        }
+                    }
+                });
+
+                if(bestStudent) {
+                    let evalD = evaluateMark(highestMark, form);
+                    terbaikHtml += `
+                        <tr class="hover:bg-slate-50">
+                            <td class="px-4 py-2 text-center border-b border-slate-100">${bIl++}</td>
+                            <td class="px-4 py-2 font-semibold text-slate-700 border-b border-slate-100">${sub}</td>
+                            <td class="px-4 py-2 text-blue-700 border-b border-slate-100">${bestStudent.name}</td>
+                            <td class="px-4 py-2 text-center font-bold border-b border-slate-100">${highestMark}</td>
+                            <td class="px-4 py-2 text-center font-bold border-b border-slate-100">${evalD.gred}</td>
+                            <td class="px-4 py-2 text-sm text-slate-500 border-b border-slate-100">${evalD.tafsiran}</td>
+                        </tr>
+                    `;
+                }
+            });
+            document.getElementById('ai-terbaik-tbody').innerHTML = terbaikHtml || '<tr><td colspan="6" class="p-4 text-center text-slate-500">Tiada data</td></tr>';
+        }
+
+        // Helper to remove Tailwind table bugs with sticky headers
+        function borderFixHtml(html) {
+            return html;
+        }
+
+        function loadAnalisisMP() {
+            const form = parseInt(document.getElementById('amp-aliran').value);
+            const selPen = document.getElementById('amp-pentaksiran').value;
+
+            const formStudents = MOCK_DB.students.filter(s => s.form === form);
+            const studentIds = formStudents.map(s => s.id);
+            const marks = MOCK_DB.marks.filter(m => m.assessment === selPen && studentIds.includes(m.studentId));
+
+            // Define grades list based on form
+            const isUpper = form >= 4;
+            const gradesList = isUpper ? ['A+', 'A', 'A-', 'B+', 'B', 'C+', 'C', 'D', 'E', 'G'] : ['A', 'B', 'C', 'D', 'E', 'F'];
+
+            // Aggregate data by subject
+            let subjectStats = {};
+
+            marks.forEach(m => {
+                if(m.mark === 'TD' || m.mark === '') return; // Tidak daftar tak kira
+                
+                if(!subjectStats[m.subject]) {
+                    subjectStats[m.subject] = {
+                        name: m.subject,
+                        daftar: 0, ambil: 0, th: 0,
+                        gredCounts: {}, lulus: 0, gagal: 0,
+                        totalGp: 0
+                    };
+                    gradesList.forEach(g => subjectStats[m.subject].gredCounts[g] = 0);
+                }
+
+                let s = subjectStats[m.subject];
+                s.daftar++;
+
+                if(m.mark === 'TH') {
+                    s.th++;
+                } else {
+                    s.ambil++;
+                    let evalD = evaluateMark(m.mark, form);
+                    
+                    if(s.gredCounts[evalD.gred] !== undefined) {
+                        s.gredCounts[evalD.gred]++;
+                    }
+                    
+                    if(isLulus(evalD.gred, form)) s.lulus++;
+                    else s.gagal++;
+
+                    s.totalGp += evalD.mata;
+                }
+            });
+
+            // Convert object to array
+            let statsArr = Object.values(subjectStats);
+            statsArr.sort((a,b) => a.name.localeCompare(b.name));
+
+            // Build Complex Headers
+            let tHead = document.getElementById('amp-thead');
+            
+            let htmlRow1 = `<tr>
+                <th rowspan="3" class="px-2 py-2 border border-slate-300 text-center bg-slate-200 align-middle">Bil</th>
+                <th rowspan="3" class="px-4 py-2 border border-slate-300 text-left bg-slate-200 align-middle min-w-[150px]">Mata Pelajaran</th>
+                <th colspan="3" class="px-2 py-1 border border-slate-300 text-center bg-blue-100">Bil Calon</th>`;
+            
+            gradesList.forEach(g => {
+                htmlRow1 += `<th colspan="2" class="px-2 py-1 border border-slate-300 text-center bg-purple-100">${g}</th>`;
+            });
+
+            htmlRow1 += `
+                <th colspan="2" class="px-2 py-1 border border-slate-300 text-center bg-emerald-100">Lulus</th>
+                <th colspan="2" class="px-2 py-1 border border-slate-300 text-center bg-red-100">Gagal</th>
+                <th colspan="2" class="px-2 py-1 border border-slate-300 text-center bg-orange-100">Tidak Layak Sijil</th>
+                <th rowspan="3" class="px-2 py-2 border border-slate-300 text-center bg-slate-200 align-middle">GPMP</th>
+            </tr>`;
+
+            let htmlRow2 = `<tr>
+                <th rowspan="2" class="px-1 py-1 border border-slate-300 text-center bg-white text-[10px]">Daftar</th>
+                <th rowspan="2" class="px-1 py-1 border border-slate-300 text-center bg-white text-[10px]">Ambil</th>
+                <th rowspan="2" class="px-1 py-1 border border-slate-300 text-center bg-white text-[10px]">TH</th>`;
+            
+            for(let i=0; i<gradesList.length; i++) {
+                htmlRow2 += `<th rowspan="2" class="px-1 py-1 border border-slate-300 text-center bg-white text-[10px]">Bil</th><th rowspan="2" class="px-1 py-1 border border-slate-300 text-center bg-white text-[10px]">%</th>`;
+            }
+
+            // Lulus, Gagal, Tidak Layak Sijil sub headers
+            htmlRow2 += `
+                <th rowspan="2" class="px-1 py-1 border border-slate-300 text-center bg-white text-[10px]">Bil</th><th rowspan="2" class="px-1 py-1 border border-slate-300 text-center bg-white text-[10px]">%</th>
+                <th rowspan="2" class="px-1 py-1 border border-slate-300 text-center bg-white text-[10px]">Bil</th><th rowspan="2" class="px-1 py-1 border border-slate-300 text-center bg-white text-[10px]">%</th>
+                <th rowspan="2" class="px-1 py-1 border border-slate-300 text-center bg-white text-[10px]">Bil</th><th rowspan="2" class="px-1 py-1 border border-slate-300 text-center bg-white text-[10px]">%</th>
+            </tr><tr></tr>`; // Dummy tr to satisfy rowspan=3 layout correctly
+
+            tHead.innerHTML = htmlRow1 + htmlRow2;
+
+            // Build Body
+            let tBodyHtml = '';
+            let sumDaftar=0, sumAmbil=0, sumTh=0, sumLulus=0, sumGagal=0, sumGpTot=0;
+
+            statsArr.forEach((s, idx) => {
+                let perLulus = s.ambil > 0 ? ((s.lulus / s.ambil) * 100).toFixed(1) : '0.0';
+                let perGagal = s.ambil > 0 ? ((s.gagal / s.ambil) * 100).toFixed(1) : '0.0';
+                let gpmp = s.ambil > 0 ? (s.totalGp / s.ambil).toFixed(2) : '0.00';
+                
+                // For "Tidak Layak Sijil", assuming it equals Gagal (G/F grade) as per instructions simplification
+                let tLssBil = s.gagal;
+                let tLssPer = perGagal;
+
+                sumDaftar += s.daftar;
+                sumAmbil += s.ambil;
+                sumTh += s.th;
+                sumLulus += s.lulus;
+                sumGagal += s.gagal;
+                sumGpTot += s.totalGp;
+
+                tBodyHtml += `<tr>
+                    <td class="px-2 py-1 border border-slate-300 text-center">${idx + 1}</td>
+                    <td class="px-2 py-1 border border-slate-300 font-medium">${s.name}</td>
+                    <td class="px-2 py-1 border border-slate-300 text-center bg-slate-50">${s.daftar}</td>
+                    <td class="px-2 py-1 border border-slate-300 text-center font-semibold text-blue-700">${s.ambil}</td>
+                    <td class="px-2 py-1 border border-slate-300 text-center text-red-500">${s.th}</td>`;
+                
+                gradesList.forEach(g => {
+                    let cnt = s.gredCounts[g];
+                    let per = s.ambil > 0 ? ((cnt / s.ambil) * 100).toFixed(1) : '0.0';
+                    tBodyHtml += `
+                        <td class="px-2 py-1 border border-slate-300 text-center">${cnt}</td>
+                        <td class="px-2 py-1 border border-slate-300 text-center text-[10px] text-slate-500">${per}</td>`;
+                });
+
+                tBodyHtml += `
+                    <td class="px-2 py-1 border border-slate-300 text-center font-bold text-emerald-600">${s.lulus}</td>
+                    <td class="px-2 py-1 border border-slate-300 text-center text-[10px] text-slate-500">${perLulus}</td>
+                    <td class="px-2 py-1 border border-slate-300 text-center font-bold text-red-600">${s.gagal}</td>
+                    <td class="px-2 py-1 border border-slate-300 text-center text-[10px] text-slate-500">${perGagal}</td>
+                    <td class="px-2 py-1 border border-slate-300 text-center text-orange-600">${tLssBil}</td>
+                    <td class="px-2 py-1 border border-slate-300 text-center text-[10px] text-slate-500">${tLssPer}</td>
+                    <td class="px-2 py-1 border border-slate-300 text-center font-bold bg-blue-50">${gpmp}</td>
+                </tr>`;
+            });
+
+            if(statsArr.length === 0) {
+                tBodyHtml = `<tr><td colspan="${5 + (gradesList.length*2) + 7}" class="p-8 text-center text-slate-500">Tiada data pendaftaran matapelajaran.</td></tr>`;
+                document.getElementById('amp-tfoot').innerHTML = '';
+            } else {
+                let overLulusPer = sumAmbil > 0 ? ((sumLulus / sumAmbil) * 100).toFixed(1) : '0.0';
+                let overGagalPer = sumAmbil > 0 ? ((sumGagal / sumAmbil) * 100).toFixed(1) : '0.0';
+                let gps = sumAmbil > 0 ? (sumGpTot / sumAmbil).toFixed(2) : '0.00';
+
+                let tFootHtml = `<tr>
+                    <td colspan="2" class="px-2 py-2 border border-slate-300 text-right uppercase">Jumlah Keseluruhan:</td>
+                    <td class="px-2 py-2 border border-slate-300 text-center">${sumDaftar}</td>
+                    <td class="px-2 py-2 border border-slate-300 text-center text-blue-700">${sumAmbil}</td>
+                    <td class="px-2 py-2 border border-slate-300 text-center text-red-500">${sumTh}</td>`;
+                
+                // Empty cells under grades
+                gradesList.forEach(() => {
+                    tFootHtml += `<td colspan="2" class="px-2 py-2 border border-slate-300 bg-slate-100"></td>`;
+                });
+
+                tFootHtml += `
+                    <td class="px-2 py-2 border border-slate-300 text-center text-emerald-600">${sumLulus}</td>
+                    <td class="px-2 py-2 border border-slate-300 text-center text-[10px]">${overLulusPer}</td>
+                    <td class="px-2 py-2 border border-slate-300 text-center text-red-600">${sumGagal}</td>
+                    <td class="px-2 py-2 border border-slate-300 text-center text-[10px]">${overGagalPer}</td>
+                    <td class="px-2 py-2 border border-slate-300 text-center text-orange-600">${sumGagal}</td>
+                    <td class="px-2 py-2 border border-slate-300 text-center text-[10px]">${overGagalPer}</td>
+                    <td class="px-2 py-2 border border-slate-300 text-center font-bold bg-blue-100">${gps}</td>
+                </tr>`;
+                document.getElementById('amp-tfoot').innerHTML = tFootHtml;
+            }
+
+            document.getElementById('amp-tbody').innerHTML = tBodyHtml;
+        }
+
+        function loadKedudukan() {
+            const form = parseInt(document.getElementById('km-aliran').value);
+            const selPen = document.getElementById('km-pentaksiran').value;
+
+            const formStudents = MOCK_DB.students.filter(s => s.form === form);
+            let resultList = [];
+
+            formStudents.forEach(stu => {
+                const marks = MOCK_DB.marks.filter(m => m.studentId === stu.id && m.assessment === selPen && m.mark !== 'TD');
+                let jm = 0, sc = 0, lulusSemua = true, hasGagal=false, gpts=0, gpSc=0;
+
+                marks.forEach(m => {
+                    sc++;
+                    if(m.mark === 'TH') {
+                        hasGagal = true; // TH considered gagal
+                        gpSc++; // penalize
+                    } else {
+                        jm += parseFloat(m.mark);
+                        let eD = evaluateMark(m.mark, form);
+                        if(!isLulus(eD.gred, form)) hasGagal = true;
+                        gpts += eD.mata;
+                        gpSc++;
+                    }
+                });
+
+                if(sc > 0) {
+                    resultList.push({
+                        name: stu.name,
+                        cls: stu.class,
+                        jm: jm,
+                        purata: (jm/sc).toFixed(2),
+                        gp: (gpSc > 0 ? (gpts/gpSc).toFixed(2) : '0.00'),
+                        keputusan: hasGagal ? 'GAGAL' : 'LULUS'
+                    });
+                }
+            });
+
+            // Sort by Average Descending
+            resultList.sort((a,b) => parseFloat(b.purata) - parseFloat(a.purata));
+
+            let html = '';
+            resultList.forEach((r, idx) => {
+                let kColor = r.keputusan === 'LULUS' ? 'text-emerald-600 bg-emerald-50' : 'text-red-600 bg-red-50';
+                html += `
+                    <tr class="hover:bg-slate-50 border-b border-slate-100">
+                        <td class="px-4 py-3 text-center font-bold text-slate-700">${idx + 1}</td>
+                        <td class="px-4 py-3 font-medium text-slate-800">${r.name}</td>
+                        <td class="px-4 py-3 text-slate-600">${r.cls}</td>
+                        <td class="px-4 py-3 text-center font-semibold text-blue-700">${r.jm}</td>
+                        <td class="px-4 py-3 text-center font-bold">${r.purata}</td>
+                        <td class="px-4 py-3 text-center font-semibold">${r.gp}</td>
+                        <td class="px-4 py-3 text-center"><span class="px-2 py-1 rounded text-xs font-bold ${kColor}">${r.keputusan}</span></td>
+                    </tr>
+                `;
+            });
+
+            if(resultList.length === 0) html = '<tr><td colspan="7" class="p-8 text-center text-slate-500">Tiada rekod ujian bagi aliran ini.</td></tr>';
+            document.getElementById('km-tbody').innerHTML = html;
+        }
+
+        function generateSlips() {
+            const selKelas = document.getElementById('slip-kelas').value;
+            const selPen = document.getElementById('slip-pentaksiran').value;
+            const form = getFormByClassName(selKelas);
+            const students = MOCK_DB.students.filter(s => s.class === selKelas);
+            
+            // Need overall form ranking data
+            const allFormMarks = [];
+            MOCK_DB.students.filter(s => s.form === form).forEach(stu => {
+                const marks = MOCK_DB.marks.filter(m => m.studentId === stu.id && m.assessment === selPen && m.mark !== 'TD');
+                let jm = 0, sc = 0;
+                marks.forEach(m => { if(m.mark !== 'TH') jm += parseFloat(m.mark); sc++; });
+                if(sc > 0) allFormMarks.push({ id: stu.id, purata: jm/sc });
+            });
+            allFormMarks.sort((a,b) => b.purata - a.purata);
+
+            // Also calculate class ranking
+            const classMarksList = allFormMarks.filter(x => students.find(s => s.id === x.id));
+
+            let printAreaHtml = '';
+
+            students.forEach((stu, idx) => {
+                const marks = MOCK_DB.marks.filter(m => m.studentId === stu.id && m.assessment === selPen && m.mark !== 'TD');
+                if(marks.length === 0) return; // Skip students with zero records
+
+                let jm = 0, sc = 0, gpTotal = 0, hasGagal = false, subjRows = '';
+                
+                marks.forEach((m, mIdx) => {
+                    sc++;
+                    let eD = evaluateMark(m.mark, form);
+                    if(m.mark === 'TH') {
+                        hasGagal = true;
+                    } else {
+                        jm += parseFloat(m.mark);
+                        if(!isLulus(eD.gred, form)) hasGagal = true;
+                        gpTotal += eD.mata;
+                    }
+
+                    subjRows += `
+                        <tr class="border-b border-slate-200">
+                            <td class="px-2 py-1 text-center text-sm">${mIdx+1}</td>
+                            <td class="px-2 py-1 text-sm font-medium">${m.subject}</td>
+                            <td class="px-2 py-1 text-center text-sm">${m.mark}</td>
+                            <td class="px-2 py-1 text-center text-sm font-bold">${eD.gred}</td>
+                            <td class="px-2 py-1 text-sm text-slate-600">${eD.tafsiran}</td>
+                        </tr>
+                    `;
+                });
+
+                let purata = (jm/sc).toFixed(2);
+                let gpa = (gpTotal/sc).toFixed(2);
+                let kedKelas = classMarksList.findIndex(x => x.id === stu.id) + 1;
+                let jumKelas = classMarksList.length;
+                let keputusan = hasGagal ? 'TIDAK MENGUASAI' : 'MENGUASAI KESELURUHAN';
+                let ulasan = getUlasan(parseFloat(purata), hasGagal);
+
+                // Build Individual Slip DOM
+                // `page-break` ensures each slip starts on a new printed page
+                printAreaHtml += `
+                    <div class="slip-container page-break bg-white border border-slate-300 rounded-xl shadow-sm p-8 max-w-4xl mx-auto mb-8">
+                        
+                        <div class="text-center mb-6 border-b-2 border-slate-800 pb-4">
+                            <img src="https://iili.io/C2Vtyb4.md.jpg" alt="Lencana Sekolah" class="h-20 w-20 object-contain mx-auto mb-3">
+                            <h1 class="text-2xl font-bold uppercase">SEKOLAH MENENGAH KEBANGSAAN KAMPAR</h1>
+                            <p class="text-slate-600 mt-1 uppercase tracking-wider">SLIP PENCAPAIAN PELAJAR</p>
+                            <p class="text-sm font-semibold mt-1 bg-slate-100 inline-block px-4 py-1 rounded-full">${selPen.toUpperCase()}</p>
+                        </div>
+
+                        <table class="w-full mb-6 border border-slate-300">
+                            <tr>
+                                <td class="bg-slate-100 font-semibold px-4 py-2 w-1/4 border-r border-b border-slate-300">NAMA MURID</td>
+                                <td class="px-4 py-2 font-bold text-lg border-b border-slate-300">${stu.name}</td>
+                            </tr>
+                            <tr>
+                                <td class="bg-slate-100 font-semibold px-4 py-2 border-r border-slate-300">KELAS / TINGKATAN</td>
+                                <td class="px-4 py-2">${stu.class} (Tingkatan ${form})</td>
+                            </tr>
+                        </table>
+
+                        <div class="font-bold text-slate-800 mb-2 uppercase border-b border-slate-200 pb-1">Keputusan Prestasi Subjek</div>
+                        <table class="w-full mb-6 border border-slate-300">
+                            <thead class="bg-slate-200">
+                                <tr>
+                                    <th class="px-2 py-2 text-center w-12 border border-slate-300">Bil</th>
+                                    <th class="px-2 py-2 text-left border border-slate-300">Mata Pelajaran</th>
+                                    <th class="px-2 py-2 text-center w-24 border border-slate-300">Markah</th>
+                                    <th class="px-2 py-2 text-center w-20 border border-slate-300">Gred</th>
+                                    <th class="px-2 py-2 text-left border border-slate-300">Tafsiran / Pencapaian</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${subjRows}
+                            </tbody>
+                        </table>
+
+                        <div class="font-bold text-slate-800 mb-2 uppercase border-b border-slate-200 pb-1">Maklumat Pencapaian</div>
+                        <table class="w-full mb-6 border border-slate-300 text-sm">
+                            <tr>
+                                <td class="bg-slate-100 font-semibold px-3 py-2 border border-slate-300 w-1/4">Bil. Mata Pelajaran</td>
+                                <td class="px-3 py-2 border border-slate-300 font-bold w-1/4">${sc}</td>
+                                <td class="bg-slate-100 font-semibold px-3 py-2 border border-slate-300 w-1/4">Jumlah Markah</td>
+                                <td class="px-3 py-2 border border-slate-300 font-bold w-1/4">${jm}</td>
+                            </tr>
+                            <tr>
+                                <td class="bg-slate-100 font-semibold px-3 py-2 border border-slate-300">Purata Markah</td>
+                                <td class="px-3 py-2 border border-slate-300 font-bold">${purata}</td>
+                                <td class="bg-slate-100 font-semibold px-3 py-2 border border-slate-300">Kedudukan Dalam Kelas</td>
+                                <td class="px-3 py-2 border border-slate-300 font-bold">${kedKelas} / ${jumKelas}</td>
+                            </tr>
+                            <tr>
+                                <td class="bg-slate-100 font-semibold px-3 py-2 border border-slate-300">Keputusan</td>
+                                <td class="px-3 py-2 border border-slate-300 font-bold ${hasGagal ? 'text-red-600' : 'text-emerald-600'}">${keputusan}</td>
+                                <td class="bg-slate-100 font-semibold px-3 py-2 border border-slate-300">Gred Purata (GPS)</td>
+                                <td class="px-3 py-2 border border-slate-300 font-bold text-blue-700">${gpa}</td>
+                            </tr>
+                        </table>
+
+                        <div class="mb-8 p-4 bg-blue-50 border-l-4 border-blue-500 rounded-r">
+                            <h4 class="font-bold text-blue-800 mb-1 text-sm">Ulasan Guru Kelas:</h4>
+                            <p class="text-slate-700 italic">"${ulasan}"</p>
+                        </div>
+
+                        <div class="grid grid-cols-3 gap-4 mt-12 text-center text-sm">
+                            <div class="flex flex-col items-center">
+                                <div class="h-16 border-b border-slate-400 w-4/5 mb-2"></div>
+                                <p class="font-semibold text-slate-700">T.T Guru Kelas</p>
+                            </div>
+                            <div class="flex flex-col items-center">
+                                <div class="h-16 border-b border-slate-400 w-4/5 mb-2"></div>
+                                <p class="font-semibold text-slate-700">T.T Pengetua</p>
+                            </div>
+                            <div class="flex flex-col items-center">
+                                <div class="h-16 border-b border-slate-400 w-4/5 mb-2"></div>
+                                <p class="font-semibold text-slate-700">T.T Ibu Bapa / Penjaga</p>
+                            </div>
+                        </div>
+
+                    </div>
+                `;
+            });
+
+            if(printAreaHtml === '') {
+                printAreaHtml = `
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-12 text-center">
+                        <i class="fas fa-folder-open text-4xl text-slate-300 mb-4"></i>
+                        <p class="text-slate-500 text-lg">Tiada rekod markah dijumpai untuk kelas ini bagi menjana slip.</p>
+                        <button onclick="switchTab('input')" class="mt-4 bg-blue-100 text-blue-700 px-4 py-2 rounded hover:bg-blue-200 transition-colors">Pergi ke Input Markah</button>
+                    </div>`;
+            }
+
+            // Inject into printArea 
+            // Since we use the same area for print preview on screen and actual print
+            document.getElementById('printArea').innerHTML = printAreaHtml;
+        }
+
+        function getUlasan(purata, hasGagal) {
+            if(purata >= 80 && !hasGagal) return "Tahniah! Pencapaian yang sangat cemerlang. Teruskan kecemerlangan anda.";
+            if(purata >= 65 && !hasGagal) return "Syabas! Pencapaian yang baik. Teruskan usaha untuk mencapai kejayaan yang lebih tinggi.";
+            if(purata >= 50 && !hasGagal) return "Pencapaian memuaskan. Anda mempunyai potensi yang besar. Tingkatkan lagi usaha belajar.";
+            if(hasGagal && purata >= 40) return "Sila berikan tumpuan pada subjek yang lemah. Anda boleh lakukan lebih baik jika berusaha gigih.";
+            return "Pencapaian kurang memuaskan. Sila gandakan usaha, fokus di dalam kelas dan banyakkan latihan.";
+        }
+
+        function printReport(elementId) {
+            let contentToPrint = '';
+            
+            if (elementId) {
+                const element = document.getElementById(elementId);
+                if (element) {
+                    contentToPrint = element.innerHTML;
+                }
+            } else {
+                const defaultElement = document.querySelector('.print-content');
+                if (defaultElement) contentToPrint = defaultElement.innerHTML;
+            }
+
+            if (!contentToPrint) {
+                showModal('Ralat', 'Tiada kandungan untuk dicetak.', 'error');
+                return;
+            }
+
+            const printWindow = window.open('', '_blank');
+            if (!printWindow) {
+                showModal('Ralat Tetingkap', 'Sila benarkan pop-up pada pelayar anda untuk menggunakan fungsi cetak.', 'error');
+                return;
+            }
+
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html lang="ms">
+                <head>
+                    <meta charset="UTF-8">
+                    <title>Cetakan Laporan SPSM</title>
+                    <script src="https://cdn.tailwindcss.com"></` + `script>
+                    <style>
+                        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+                        @page { 
+                            size: A4; 
+                            margin: 1.5cm; 
+                        }
+                        body { 
+                            font-family: 'Inter', sans-serif; 
+                            background-color: white; 
+                            color: #1e293b;
+                            -webkit-print-color-adjust: exact; 
+                            print-color-adjust: exact; 
+                        }
+                        /* Pastikan jadual dicetak dengan baik */
+                        .table-container { 
+                            overflow: visible !important; 
+                            max-height: none !important; 
+                        }
+                        table { 
+                            width: 100%; 
+                            border-collapse: collapse; 
+                            page-break-inside: auto; 
+                            font-size: 0.875rem;
+                        }
+                        tr { 
+                            page-break-inside: avoid; 
+                            page-break-after: auto; 
+                        }
+                        thead { display: table-header-group; }
+                        tfoot { display: table-footer-group; }
+                        
+                        /* Sembunyikan elemen yang tidak perlu dicetak */
+                        .no-print { display: none !important; }
+                        .page-break { page-break-after: always; }
+                        
+                        /* Styling asas untuk jadual */
+                        th, td {
+                            border: 1px solid #cbd5e1 !important;
+                            padding: 8px;
+                        }
+                        th {
+                            background-color: #f1f5f9 !important;
+                        }
+                    </style>
+                </head>
+                <body>
+                    ${contentToPrint}
+                    <script>
+                        // Beri masa untuk pelayar render Tailwind CSS sebelum memanggil dialog cetakan
+                        setTimeout(function() {
+                            window.print();
+                            window.close();
+                        }, 800);
+                    </` + `script>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+        }
+
+        function triggerPrint() {
+            printReport('printArea');
+        }
+
+        // Custom Modal Logic (Replaces alert)
+        function showModal(title, message, type = 'success') {
+            document.getElementById('modalTitle').innerText = title;
+            document.getElementById('modalMessage').innerText = message;
+            
+            const icon = document.getElementById('modalIcon');
+            const closeBtn = document.getElementById('modalCloseBtn');
+            
+            if(type === 'success') {
+                icon.className = 'mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4 text-green-600 text-2xl';
+                icon.innerHTML = '<i class="fas fa-check"></i>';
+                closeBtn.style.display = 'inline-flex';
+            } else if(type === 'error') {
+                icon.className = 'mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4 text-red-600 text-2xl';
+                icon.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
+                closeBtn.style.display = 'inline-flex';
+            } else if(type === 'loading') {
+                icon.className = 'mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 mb-4 text-blue-600 text-2xl animate-spin';
+                icon.innerHTML = '<i class="fas fa-spinner"></i>';
+                closeBtn.style.display = 'none'; // Sembunyikan butang tutup sewaktu menyimpan
+            }
+
+            const modal = document.getElementById('customModal');
+            const content = document.getElementById('modalContent');
+            
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            modal.classList.add('opacity-100');
+            content.classList.remove('scale-95');
+            content.classList.add('scale-100');
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('customModal');
+            const content = document.getElementById('modalContent');
+            
+            modal.classList.remove('opacity-100');
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            content.classList.remove('scale-100');
+            content.classList.add('scale-95');
+        }
+
+        // Run Initialization on load
+        window.onload = initApp;
+
+    </script>
+</body>
+</html>
